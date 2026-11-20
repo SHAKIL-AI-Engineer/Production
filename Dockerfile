@@ -1,0 +1,20 @@
+# Multi-stage build for production-report-api
+FROM golang:1.22-alpine AS builder
+
+WORKDIR /app
+RUN apk add --no-cache gcc g++ make ca-certificates && \
+    update-ca-certificates
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN CGO_ENABLED=1 GOOS=linux go build -ldflags="-s -w" -o /bin/server ./cmd/server/main.go
+
+FROM alpine:3.20
+RUN apk --no-cache add ca-certificates tzdata
+WORKDIR /root/
+COPY --from=builder /bin/server .
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+EXPOSE 8080
+ENTRYPOINT ["./server"]
