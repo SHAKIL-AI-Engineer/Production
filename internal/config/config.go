@@ -16,13 +16,14 @@ type Config struct {
 	AppPort string
 	BaseURL string
 
-	DBDriver   string
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	DBPath     string
+	DBDriver    string
+	DBHost      string
+	DBPort      string
+	DBUser      string
+	DBPassword  string
+	DBName      string
+	DBPath      string
+	DatabaseURL string
 
 	JWTSecret        string
 	JWTAccessExpiry  time.Duration
@@ -37,22 +38,26 @@ func Load() *Config {
 
 	cfg := &Config{
 		AppEnv:  getEnv("APP_ENV", "development"),
-		AppPort: getEnv("APP_PORT", "8080"),
+		AppPort: getEnv("PORT", getEnv("APP_PORT", "8080")),
 		BaseURL: getEnv("APP_BASE_URL", "http://localhost:8080"),
 
-		DBDriver:   getEnv("DB_DRIVER", "postgres"),
-		DBHost:     getEnv("DB_HOST", "localhost"),
-		DBPort:     getEnv("DB_PORT", "5432"),
-		DBUser:     getEnv("DB_USER", "postgres"),
-		DBPassword: getEnv("DB_PASSWORD", "123580"),
-		DBName:     getEnv("DB_NAME", "production"),
-		DBPath:     getEnv("DB_PATH", "./data/production.db"),
+		DBDriver:    getEnv("DB_DRIVER", "postgres"),
+		DBHost:      getEnv("DB_HOST", "localhost"),
+		DBPort:      getEnv("DB_PORT", "5432"),
+		DBUser:      getEnv("DB_USER", "postgres"),
+		DBPassword:  getEnv("DB_PASSWORD", "123580"),
+		DBName:      getEnv("DB_NAME", "production"),
+		DBPath:      getEnv("DB_PATH", "./data/production.db"),
+		DatabaseURL: getEnv("DATABASE_URL", getEnv("POSTGRES_URL", "")),
 
 		JWTSecret:        getEnv("JWT_SECRET", "change-this-in-production"),
 		JWTAccessExpiry:  time.Duration(getDurationEnv("JWT_ACCESS_EXPIRY_MINUTES", 15)) * time.Minute,
 		JWTRefreshExpiry: time.Duration(getDurationEnv("JWT_REFRESH_EXPIRY_HOURS", 168)) * time.Hour,
 
 		CORSAllowedOrigins: splitEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080"),
+	}
+	if cfg.DatabaseURL != "" {
+		cfg.DBDriver = "postgres"
 	}
 
 	if cfg.JWTSecret == "change-this-in-production" && cfg.AppEnv == "production" {

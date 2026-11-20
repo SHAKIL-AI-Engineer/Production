@@ -36,3 +36,25 @@ func TestLoadDefaults(t *testing.T) {
 		t.Error("expected default DBDriver to be non-empty")
 	}
 }
+
+func TestHostedPortAndDatabaseURL(t *testing.T) {
+	t.Setenv("PORT", "4242")
+	t.Setenv("APP_PORT", "8080")
+	t.Setenv("DB_DRIVER", "sqlite")
+	t.Setenv("DATABASE_URL", "postgresql://test:test@localhost/test?sslmode=require")
+	cfg := Load()
+	if cfg.AppPort != "4242" {
+		t.Fatalf("host-assigned PORT must take precedence; got %s", cfg.AppPort)
+	}
+	if cfg.DBDriver != "postgres" || cfg.DatabaseURL == "" {
+		t.Fatal("a PostgreSQL connection URL must select the postgres driver")
+	}
+}
+
+func TestPostgresURLFallback(t *testing.T) {
+	t.Setenv("DATABASE_URL", "")
+	t.Setenv("POSTGRES_URL", "postgresql://test:test@localhost/test?sslmode=require")
+	if cfg := Load(); cfg.DatabaseURL != os.Getenv("POSTGRES_URL") {
+		t.Fatal("POSTGRES_URL must be accepted for Marketplace integrations")
+	}
+}

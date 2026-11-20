@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { ThemeProvider as NextThemesProvider } from "next-themes"
-import { Toaster } from "@/components/ui/sonner"
+import * as React from "react";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
+import { Toaster } from "@/components/ui/sonner";
 
 /**
  * App-wide providers:
@@ -11,9 +11,14 @@ import { Toaster } from "@/components/ui/sonner"
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <NextThemesProvider attribute="class" defaultTheme="system" enableSystem>
+    <NextThemesProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
       {children}
       <Toaster position="top-right" richColors />
     </NextThemesProvider>
-  )
+  );
 }

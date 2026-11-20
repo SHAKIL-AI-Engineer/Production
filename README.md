@@ -2,6 +2,8 @@
 
 Go + Gin REST API for daily production, daily expense, Profit & Loss, and summary reporting with JWT authentication and role-based access control.
 
+The `web/` directory contains the FactoryOps dashboard with responsive navigation, light/dark/system themes, daily production and expense pages, monthly expenses, and summary reports. See [web/README.md](web/README.md) for setup and frontend checks.
+
 ## Features
 
 - User registration & login (JWT)
@@ -17,7 +19,7 @@ Go + Gin REST API for daily production, daily expense, Profit & Loss, and summar
 
 ```bash
 # 1. Enter the project
-cd production-report-api
+cd Production
 
 # 2. Copy environment variables
 copy .env.example .env   # Windows
@@ -38,7 +40,7 @@ Register:
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/register ^
   -H "Content-Type: application/json" ^
-  -d "{\"email\":\"admin@factory.com\",\"password\":\"AdminPass123!\",\"role\":\"admin\"}"
+  -d "{\"email\":\"admin@factory.com\",\"password\":\"AdminPass123!\"}"
 ```
 
 Login:

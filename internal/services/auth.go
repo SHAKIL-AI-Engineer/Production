@@ -25,7 +25,7 @@ func NewAuthService(userRepo repository.UserRepository, jwtMgr *jwt.Manager, cfg
 type RegisterInput struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
-	Role     string `json:"role" binding:"omitempty,oneof=admin manager user"`
+	Role     string `json:"role" binding:"omitempty,oneof=user"`
 }
 
 // LoginInput is the payload for user login.
@@ -44,15 +44,11 @@ func (s *AuthService) Register(in RegisterInput) (*models.User, error) {
 		return nil, errors.New("email already registered")
 	}
 
-	role := in.Role
-	if role == "" {
-		role = models.RoleUser
-	}
-
 	user := &models.User{
 		Email:        in.Email,
 		PasswordHash: in.Password, // hashed by BeforeCreate hook
-		Role:         role,
+		// Public self-registration must never grant elevated permissions.
+		Role: models.RoleUser,
 	}
 
 	if err := s.userRepo.Create(user); err != nil {
@@ -96,5 +92,3 @@ func (s *AuthService) Me(userID string) (*models.User, error) {
 func (s *AuthService) AccessExpirySeconds() int64 {
 	return int64(s.cfg.JWTAccessExpiry.Seconds())
 }
-
-

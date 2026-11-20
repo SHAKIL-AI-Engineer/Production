@@ -21,10 +21,13 @@ func New(cfg *config.Config) (*gorm.DB, error) {
 
 	switch cfg.DBDriver {
 	case "postgres":
-		dsn := fmt.Sprintf(
-			"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
-			cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort,
-		)
+		dsn := cfg.DatabaseURL
+		if dsn == "" {
+			dsn = fmt.Sprintf(
+				"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
+				cfg.DBHost, cfg.DBUser, cfg.DBPassword, cfg.DBName, cfg.DBPort,
+			)
+		}
 		dialector = postgres.Open(dsn)
 	case "sqlite":
 		if dir := filepath.Dir(cfg.DBPath); dir != "" && dir != "." {

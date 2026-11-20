@@ -1,5 +1,5 @@
 # Multi-stage build for production-report-api
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /app
 RUN apk add --no-cache gcc g++ make ca-certificates && \

@@ -1,17 +1,21 @@
-import type { ApiResponse } from "@/types/api"
+import type { ApiResponse } from "@/types/api";
 
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1").replace(/\/+$/, "")
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || "/api/v1").replace(
+  /\/+$/,
+  "",
+);
 
-type RequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
+type RequestMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 interface ApiClientOptions {
-  baseUrl?: string
-  headers?: Record<string, string>
+  baseUrl?: string;
+  headers?: Record<string, string>;
 }
 
 interface RequestOptions {
-  headers?: Record<string, string>
-  cache?: RequestCache
+  headers?: Record<string, string>;
+  cache?: RequestCache;
+  signal?: AbortSignal;
 }
 
 /**
@@ -21,20 +25,20 @@ interface RequestOptions {
  * - Throws on non-ok responses so callers can use try/catch.
  */
 class ApiClient {
-  private baseUrl: string
-  private defaultHeaders: Record<string, string>
+  private baseUrl: string;
+  private defaultHeaders: Record<string, string>;
 
   constructor({ baseUrl = API_BASE_URL, headers = {} }: ApiClientOptions = {}) {
-    this.baseUrl = baseUrl
-    this.defaultHeaders = { "Content-Type": "application/json", ...headers }
+    this.baseUrl = baseUrl;
+    this.defaultHeaders = { "Content-Type": "application/json", ...headers };
   }
 
   /** Attach or remove a Bearer auth token on all subsequent requests. */
   setAuthToken(token: string | null) {
     if (token) {
-      this.defaultHeaders["Authorization"] = `Bearer ${token}`
+      this.defaultHeaders["Authorization"] = `Bearer ${token}`;
     } else {
-      delete this.defaultHeaders["Authorization"]
+      delete this.defaultHeaders["Authorization"];
     }
   }
 
@@ -44,48 +48,54 @@ class ApiClient {
     body?: unknown,
     options: RequestOptions = {},
   ): Promise<ApiResponse<T>> {
-    const url = `${this.baseUrl}${path}`
-    const headers: Record<string, string> = { ...this.defaultHeaders, ...options.headers }
+    const url = `${this.baseUrl}${path}`;
+    const headers: Record<string, string> = {
+      ...this.defaultHeaders,
+      ...options.headers,
+    };
 
     const res = await fetch(url, {
       method,
       headers,
       body: body && method !== "GET" ? JSON.stringify(body) : undefined,
       cache: options.cache ?? "no-store",
-    })
+      signal: options.signal,
+    });
 
-    const contentType = res.headers.get("content-type") ?? ""
-    let raw: unknown = null
-    if (contentType.includes("application/json")) {
-      raw = await res.json()
+    const contentType = res.headers.get("content-type") ?? "";
+    let raw: unknown = null;
+    if (res.status === 204) {
+      raw = null;
+    } else if (contentType.includes("application/json")) {
+      raw = await res.json();
     } else {
-      raw = await res.text()
+      raw = await res.text();
     }
 
-    const data = raw as Record<string, unknown> | unknown[] | null
-    const isSuccess = res.ok
+    const data = raw as Record<string, unknown> | unknown[] | null;
+    const isSuccess = res.ok;
 
-    let responseData: T | null = null
-    let responseMessage = isSuccess ? "Success" : res.statusText
-    let responseError: string | null = isSuccess ? null : res.statusText
+    let responseData: T | null = null;
+    let responseMessage = isSuccess ? "Success" : res.statusText;
+    let responseError: string | null = isSuccess ? null : res.statusText;
 
     if (data && typeof data === "object") {
       if (!Array.isArray(data) && "data" in data) {
-        responseData = (data as Record<string, unknown>).data as T
+        responseData = (data as Record<string, unknown>).data as T;
       } else {
-        responseData = data as T
+        responseData = data as T;
       }
 
       if (!Array.isArray(data)) {
         if ("message" in data && typeof data.message === "string") {
-          responseMessage = data.message
+          responseMessage = data.message;
         }
         if ("error" in data && typeof data.error === "string") {
-          responseError = data.error
+          responseError = data.error;
         }
       }
     } else if (raw !== null) {
-      responseData = raw as T
+      responseData = raw as T;
     }
 
     const response: ApiResponse<T> = {
@@ -95,43 +105,43 @@ class ApiClient {
       error: responseError,
       statusCode: res.status,
       timestamp: new Date().toISOString(),
-    }
+    };
 
     if (!res.ok) {
       const err = new Error(responseError || response.message) as Error & {
-        response: ApiResponse<T>
-        statusCode: number
-      }
-      err.response = response
-      err.statusCode = response.statusCode
-      throw err
+        response: ApiResponse<T>;
+        statusCode: number;
+      };
+      err.response = response;
+      err.statusCode = response.statusCode;
+      throw err;
     }
 
-    return response
+    return response;
   }
 
   get<T>(path: string, options?: RequestOptions) {
-    return this.request<T>("GET", path, undefined, options)
+    return this.request<T>("GET", path, undefined, options);
   }
 
   post<T>(path: string, body?: unknown, options?: RequestOptions) {
-    return this.request<T>("POST", path, body, options)
+    return this.request<T>("POST", path, body, options);
   }
 
   put<T>(path: string, body?: unknown, options?: RequestOptions) {
-    return this.request<T>("PUT", path, body, options)
+    return this.request<T>("PUT", path, body, options);
   }
 
   patch<T>(path: string, body?: unknown, options?: RequestOptions) {
-    return this.request<T>("PATCH", path, body, options)
+    return this.request<T>("PATCH", path, body, options);
   }
 
   delete<T>(path: string, options?: RequestOptions) {
-    return this.request<T>("DELETE", path, undefined, options)
+    return this.request<T>("DELETE", path, undefined, options);
   }
 }
 
-export const api = new ApiClient()
+export const api = new ApiClient();
 
-export type { ApiResponse, RequestMethod }
-export { API_BASE_URL }
+export type { ApiResponse, RequestMethod };
+export { API_BASE_URL };

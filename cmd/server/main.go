@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+	"net/http"
+	"os"
 
 	"production-report-api/internal/config"
 	"production-report-api/internal/database"
@@ -22,6 +24,20 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	} else {
 		gin.SetMode(gin.DebugMode)
+	}
+
+	// Keep deployment setup failures actionable instead of crashing a cold start.
+	if os.Getenv("VERCEL") == "1" && cfg.DatabaseURL == "" && os.Getenv("DB_HOST") == "" {
+		log.Print("Database setup pending: connect PostgreSQL and set DATABASE_URL or POSTGRES_URL")
+		engine := gin.New()
+		engine.Use(gin.Recovery())
+		engine.NoRoute(func(c *gin.Context) {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "The reporting database is not connected yet. Please contact the workspace administrator."})
+		})
+		if err := engine.Run(":" + cfg.AppPort); err != nil {
+			log.Fatalf("server failed: %v", err)
+		}
+		return
 	}
 
 	// Database
